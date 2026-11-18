@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   const DOC = 'local/seguridad';
-  const DEF = { v: 2, ocultar: true, dobleToque: true, sacudir: false, bloqueo: 0, pinHash: null, salt: null, pinLen: 0, credId: null };
+  const DEF = { v: 3, ocultar: true, dobleToque: true, sacudir: true, bloqueo: 0, pinHash: null, salt: null, pinLen: 0, credId: null };
   let cfg = { ...DEF };
   let ready = false;
   const $id = (id) => document.getElementById(id);
@@ -290,7 +290,7 @@
 
   /* ---------- Arranque ---------- */
   (async () => {
-    try { const d = await window.LOCAL_DB.getDoc(DOC); if (d) { cfg = { ...DEF, ...d }; if (!d.v) { cfg.v = 2; cfg.sacudir = false; cfg.dobleToque = true; await window.LOCAL_DB.setDoc(DOC, cfg); } } } catch (e) {}
+    try { const d = await window.LOCAL_DB.getDoc(DOC); if (d) { cfg = { ...DEF, ...d }; if ((d.v || 0) < 3) { cfg.v = 3; cfg.sacudir = true; cfg.dobleToque = true; await window.LOCAL_DB.setDoc(DOC, cfg); } } } catch (e) {}
     ready = true;
     ls.set('gd-lock', cfg.pinHash ? '1' : null);
     if (cfg.ocultar === false && ls.get('gd-ocultar') !== '0') { ls.set('gd-ocultar', '0'); }
