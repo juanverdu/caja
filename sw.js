@@ -1,7 +1,7 @@
 /* Gestión del Dinero · service worker
    Primero intenta la red (para recibir cambios al momento) y, sin conexión,
    usa la copia guardada. Tus datos no pasan por aquí: están en IndexedDB. */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = 'gestion-dinero-' + VERSION;
 const SHELL = ['./', './index.html', './local-db.js', './mini-xlsx.js', './pwa.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
