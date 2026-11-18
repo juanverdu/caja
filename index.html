@@ -214,7 +214,7 @@ header.top .wrap{gap:8px}
 .payday .box span{font-size:12px;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .payday .box b{font-weight:700;white-space:nowrap}
 .payday .note{font-size:12px;opacity:.88}
-.quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .quick button{min-height:64px;border:1px solid var(--line);border-radius:18px;background:var(--surface);font-weight:700;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer}
 .quick button svg{width:20px;height:20px;stroke:var(--accent-tx)}
 .quick button.warn{background:var(--warn-soft);border-color:#4A3A16;color:var(--warn)}
@@ -781,7 +781,7 @@ function vInicio(el){
 }
 function quickActions(){
   const pend = window.copiaPendiente && copiaPendiente();
-  return `<section class="quick" aria-label="Accesos rápidos"><button type="button" onclick="openAdd()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Añadir</button><button type="button" onclick="pickFile()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Extracto</button><button type="button" class="${pend ? 'warn' : ''}" onclick="backupExport()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19 10a4 4 0 0 1-1 8H7z"/></svg>Copia</button></section>`;
+  return `<section class="quick" aria-label="Accesos rápidos"><button type="button" onclick="openAdd()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Añadir</button><button type="button" onclick="pegarExtracto()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6v3H9zM8 5.5H6a1 1 0 0 0-1 1V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6.5a1 1 0 0 0-1-1h-2M9 13h6M9 17h4"/></svg>Pegar</button><button type="button" onclick="pickFile()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Extracto</button><button type="button" class="${pend ? 'warn' : ''}" onclick="backupExport()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19 10a4 4 0 0 1-1 8H7z"/></svg>Copia</button></section>`;
 }
 function resumenSobrante(k){
   const [y,m0] = mkParts(k); const p = proyeccion(k); const c = cobro(y, m0);
@@ -1616,11 +1616,15 @@ async function importFile(file){
   try{
     toast('Leyendo ' + file.name + '…');
     if (/\.csv$/i.test(file.name)){ const csv = parseCSV(await file.text()); if (csv.length && csv[0].includes('transaction_id') && csv[0].includes('account_type')){ await importTR(csv); return; } }
+    let rows;
+    if (/\.(tsv|txt)$/i.test(file.name) || (/\.csv$/i.test(file.name) && !(await file.text()).includes('transaction_id'))) rows = tablaTexto(await file.text());
+    else {
     let wb; const buf = await file.arrayBuffer();
     try { wb = await window.XLSX.read(buf, { type:'array' }); }
     catch(err){ if (!(window.XLSX && window.XLSX.mini)) throw err; delete window.XLSX; await loadXLSX(); wb = XLSX.read(buf, { type:'array' }); }
     const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:'' });
+    rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:'' });
+    }
     const hi = rows.findIndex(r => r.some(c => /^fecha operaci/i.test(String(c).trim())));
     if (hi < 0){ toast('No reconozco el archivo. Usa el Excel de movimientos de Santander (cuenta corriente o de ahorro) o el CSV de transacciones de Trade Republic.'); return; }
     const H = rows[hi].map(c => String(c).trim().toLowerCase());

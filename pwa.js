@@ -13,6 +13,53 @@
     ultimoToque = t;
   }, { passive: false });
 
+  /* ---------- Pegar un extracto ---------- */
+  // Tabla en texto (copiada de Excel/Numbers o de la web del banco) → filas como las del Excel
+  window.tablaTexto = function (txt) {
+    const lines = String(txt).replace(/\r/g, '').split('\n').filter((l) => l.trim());
+    const sep = lines.some((l) => l.includes('\t')) ? '\t' : lines.some((l) => l.split(';').length > 3) ? ';' : ',';
+    const rows = lines.map((l) => l.split(sep).map((c) => c.trim().replace(/^"(.*)"$/, '$1')));
+    const esFecha = (c) => /^\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}$/.test(String(c || '').trim());
+    if (!rows.some((r) => r.some((c) => /^fecha operaci/i.test(c)))) {
+      const datos = rows.filter((r) => esFecha(r[0]));
+      if (datos.length) {
+        const w = datos[0].length;
+        const head = esFecha(datos[0][1]) ? ['Fecha operación', 'Fecha valor', 'Concepto', 'Importe', 'Saldo'] : ['Fecha operación', 'Concepto', 'Importe', 'Saldo'];
+        rows.unshift(head.slice(0, Math.max(4, Math.min(head.length, w))));
+      }
+    }
+    return rows;
+  };
+  async function pegarTexto(txt) {
+    if (txt && /\n/.test(txt.trim()) && /\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}/.test(txt)) { importFile(new File([txt], 'pegado.tsv', { type: 'text/tab-separated-values' })); return true; }
+    return false;
+  }
+  window.pegarExtracto = async function () {
+    try {
+      if (navigator.clipboard && navigator.clipboard.read) {
+        const items = await navigator.clipboard.read();
+        for (const it of items) {
+          const t = it.types.find((x) => /sheet|excel|csv|octet-stream|zip/i.test(x));
+          if (t) { const blob = await it.getType(t); importFile(new File([blob], /csv/i.test(t) ? 'pegado.csv' : 'pegado.xlsx', { type: t })); return; }
+        }
+        for (const it of items) if (it.types.includes('text/plain')) { if (await pegarTexto(await (await it.getType('text/plain')).text())) return; }
+      } else if (navigator.clipboard && navigator.clipboard.readText) {
+        if (await pegarTexto(await navigator.clipboard.readText())) return;
+      }
+      toast('Lo que has copiado no es un extracto. Copia el archivo Excel del banco o las filas de movimientos y vuelve a pulsar Pegar.');
+    } catch (e) {
+      toast('El iPhone no ha dejado leer lo copiado. Pulsa «Pegar» en el aviso que aparece o usa Extracto.');
+    }
+  };
+  // Con teclado (iPad, ordenador): pegar en cualquier sitio también importa
+  document.addEventListener('paste', (e) => {
+    const a = document.activeElement; if (a && /INPUT|TEXTAREA/.test(a.tagName)) return;
+    const f = e.clipboardData && e.clipboardData.files && e.clipboardData.files[0];
+    if (f) { e.preventDefault(); importFile(f); return; }
+    const t = e.clipboardData && e.clipboardData.getData('text/plain');
+    if (t) pegarTexto(t).then((ok) => { if (ok) e.preventDefault(); });
+  });
+
   /* ---------- Copia de seguridad ---------- */
   const hoy = () => new Date().toISOString().slice(0, 10);
   window.backupExport = async function () {
