@@ -250,6 +250,25 @@ main.wrap{padding-bottom:calc(112px + env(safe-area-inset-bottom,0px));gap:14px}
 .meter .fill{background:var(--accent)}
 .meter .ghost{background:#3A4A86}
 .seg button[aria-pressed="true"]{background:var(--accent);color:#FFFFFF}
+/* Ajustes: menú por apartados */
+.ajmenu{padding:6px 0;gap:0}
+.ajmenu button{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:10px 16px;border:0;background:none;text-align:left;cursor:pointer}
+.ajmenu button + button{border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.ajmenu .aic{width:38px;height:38px;border-radius:12px;background:var(--accent-soft);color:var(--accent-tx);display:grid;place-items:center;flex:none}
+.ajmenu .aic svg{width:20px;height:20px}
+.ajmenu .at{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.ajmenu .at b{font-weight:700}
+.ajmenu .at small{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ajmenu .chev{font-size:22px;color:var(--muted);line-height:1}
+.ajback{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px 0 10px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--accent-tx);font-weight:700;cursor:pointer}
+.ajback span{font-size:22px;line-height:1}
+/* Formularios: fechas y números bien alineados en el iPhone */
+.grid2{align-items:end}
+.grid2 > *{min-width:0}
+.field input:not([type=checkbox]):not([type=radio]),.field select{height:46px;min-height:46px;padding-block:0;font-size:16px}
+.field input[type="date"],.field input[type="month"],.field input[type="number"]{-webkit-appearance:none;appearance:none;display:block;width:100%;max-width:100%;line-height:24px;text-align:left}
+.field input::-webkit-date-and-time-value{text-align:left;margin:0}
+.field input::-webkit-calendar-picker-indicator{filter:invert(.8)}
 .mov .ic[data-k="Vivienda"],.acc .ini[data-k="Vivienda"]{background:rgba(239,68,68,.16);color:#FCA5A5} .catchips [data-k="Vivienda"]{background:rgba(239,68,68,.16)} .catchips [data-k="Vivienda"] i{background:#FCA5A5}
 .mov .ic[data-k="Alimentación"],.acc .ini[data-k="Alimentación"]{background:rgba(245,158,11,.15);color:#FCD34D} .catchips [data-k="Alimentación"]{background:rgba(245,158,11,.15)} .catchips [data-k="Alimentación"] i{background:#FCD34D}
 .mov .ic[data-k="Restaurantes y ocio"],.acc .ini[data-k="Restaurantes y ocio"]{background:rgba(236,72,153,.15);color:#F472B6} .catchips [data-k="Restaurantes y ocio"]{background:rgba(236,72,153,.15)} .catchips [data-k="Restaurantes y ocio"] i{background:#F472B6}

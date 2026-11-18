@@ -46,6 +46,70 @@
     saveCfg().then(() => { toast('Guardado.'); render(); });
   };
 
+  /* ---------- Ajustes: menú por apartados ---------- */
+  const IC = {
+    nomina: 'M4 7h16v12H4zM9 7V5h6v2M4 12h16',
+    ahorro: 'M5 11a7 6 0 0 1 13-2h2v4h-2a7 6 0 0 1-3 3v3h-3v-2H9v2H6v-3a6 6 0 0 1-1-5zM15 10h.01',
+    cuotas: 'M4 12a8 8 0 0 1 14-5l2 2M20 12a8 8 0 0 1-14 5l-2-2M18 4v5h-5M6 20v-5h5',
+    reparto: 'M12 3v18M5 8h11a3 3 0 0 1 0 6H8a3 3 0 0 0 0 6h11',
+    vehiculos: 'M5 16l1.5-5A2 2 0 0 1 8.4 9.6h7.2a2 2 0 0 1 1.9 1.4L19 16v3h-2v-2H7v2H5zM7.5 14h.01M16.5 14h.01',
+    huchas: 'M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0-16M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6',
+    limites: 'M12 4l9 16H3zM12 10v4M12 17h.01',
+    reglas: 'M4 6h16M4 12h10M4 18h6',
+    datos: 'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3',
+    copia: 'M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19 10a4 4 0 0 1-1 8H7z',
+    titular: 'M12 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8M4 20a8 8 0 0 1 16 0',
+  };
+  function infoSec(t) {
+    const c = S.cfg || {}; const n = c.nomina || {}; const T = t.toLowerCase();
+    const cnt = (a, s1, s2) => { const k = (a || []).length; return k + ' ' + (k === 1 ? s1 : s2); };
+    try {
+      if (T.startsWith('nómina')) return ['nomina', money(n.base) + ' · guardia cada ' + n.cadaSemanas + ' semanas'];
+      if (T.startsWith('ahorro')) return ['ahorro', 'Ahorro ' + money(saldoAhorro()) + ' · Trade Republic'];
+      if (T.startsWith('cuotas')) return ['cuotas', cnt((c.fijos || []).filter((f) => f.activo !== false), 'activa', 'activas')];
+      if (T.startsWith('reparto')) return ['reparto', 'Colchón ' + money((c.reparto || {}).colchon, { dec: 0 }) + ' · ' + ((c.reparto || {}).pctAhorro ?? 50) + ' % a ahorro'];
+      if (T.startsWith('vehículos')) return ['vehiculos', cnt((c.vehiculos || {}).seguros, 'seguro', 'seguros')];
+      if (T.startsWith('huchas')) return ['huchas', cnt(c.huchas, 'hucha', 'huchas')];
+      if (T.startsWith('límites')) return ['limites', cnt(c.limites, 'límite', 'límites')];
+      if (T.startsWith('reglas')) return ['reglas', cnt(c.reglas, 'regla', 'reglas')];
+      if (T.startsWith('datos')) return ['datos', todosMovs().length + ' movimientos · importar extractos'];
+      if (T.startsWith('copia')) return ['copia', c.ultimaCopia ? 'Última: ' + fshort(parseD(c.ultimaCopia)) : 'Aún no has guardado ninguna'];
+      if (T.startsWith('tus datos')) return ['titular', 'Para reconocer tus traspasos y la nómina'];
+    } catch (e) {}
+    return ['reglas', ''];
+  }
+  const vAjOrig = window.vAjustes;
+  window.vAjustes = function (el) {
+    vAjOrig(el);
+    // Agrupa cada título con lo que hay debajo hasta el siguiente título
+    const groups = []; let cur = null;
+    for (const node of Array.from(el.children)) {
+      if (node.matches('h2.sec')) { cur = { title: node.textContent.trim(), id: node.id, nodes: [node] }; groups.push(cur); }
+      else if (cur) cur.nodes.push(node);
+    }
+    if (!groups.length) return;
+    if (S.ajFoco) { const g = groups.find((x) => x.id === 'aj-' + S.ajFoco); if (g) S.ajSec = g.title; }
+    const open = groups.find((g) => g.title === S.ajSec);
+    if (!open) {
+      S.ajSec = null;
+      el.innerHTML = '<h2 class="sec" style="margin:2px 0 0">Ajustes</h2><nav class="ajmenu card" aria-label="Apartados de ajustes">' + groups.map((g, i) => {
+        const [ic, sub] = infoSec(g.title);
+        return '<button type="button" data-i="' + i + '"><span class="aic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + IC[ic] + '"/></svg></span>' +
+          '<span class="at"><b>' + esc(g.title) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span><span class="chev" aria-hidden="true">›</span></button>';
+      }).join('') + '</nav>';
+      el.querySelectorAll('.ajmenu button').forEach((b) => b.addEventListener('click', () => { S.ajSec = groups[+b.dataset.i].title; render(); window.scrollTo(0, 0); }));
+      return;
+    }
+    el.innerHTML = '';
+    const back = document.createElement('button');
+    back.type = 'button'; back.className = 'ajback'; back.innerHTML = '<span aria-hidden="true">‹</span> Ajustes';
+    back.addEventListener('click', () => { S.ajSec = null; render(); window.scrollTo(0, 0); });
+    el.appendChild(back);
+    open.nodes.forEach((n) => el.appendChild(n));
+  };
+  const tabAj = document.querySelector('.tab[data-v="ajustes"]');
+  if (tabAj) tabAj.addEventListener('click', () => { S.ajSec = null; }, true);
+
   /* ---------- Aviso de copia pendiente ---------- */
   window.copiaPendiente = function () {
     const u = S.cfg && S.cfg.ultimaCopia;
