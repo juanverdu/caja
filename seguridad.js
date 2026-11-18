@@ -1,11 +1,11 @@
 /* Gestión del Dinero · seguridad y privacidad
    - Bloqueo con código y Face ID (passkey del propio iPhone).
-   - Importes ocultos al abrir; se muestran con el interruptor del ojo o sacudiendo el móvil.
+   - Importes ocultos al abrir; se muestran con el ojo, con doble toque en la pantalla o (opcional) sacudiendo el móvil.
    Ajustes en IndexedDB «local/seguridad» (solo de este teléfono, no va en las copias). */
 (function () {
   'use strict';
   const DOC = 'local/seguridad';
-  const DEF = { ocultar: true, sacudir: true, bloqueo: 0, pinHash: null, salt: null, pinLen: 0, credId: null };
+  const DEF = { v: 2, ocultar: true, dobleToque: true, sacudir: false, bloqueo: 0, pinHash: null, salt: null, pinLen: 0, credId: null };
   let cfg = { ...DEF };
   let ready = false;
   const $id = (id) => document.getElementById(id);
@@ -125,6 +125,26 @@
   // iOS solo deja pedir el permiso tras un toque: se intenta en cada toque hasta que queda activado
   ['touchend', 'click'].forEach((ev) => document.addEventListener(ev, () => { if (!motionOk) pedirMovimiento(); }, { capture: true, passive: true }));
 
+  /* ---------- Doble toque en la pantalla (sin permisos) ---------- */
+  let tap = { t: 0, x: 0, y: 0 }, toque0 = null, ultimoToggle = 0;
+  const NO_TAP = 'button,a,input,select,textarea,label,[role="switch"],.chip,.mov,.ajmenu,table';
+  const bloqueado = () => $id('lock') || $id('informe') || ($id('sheetHost') && $id('sheetHost').innerHTML);
+  document.addEventListener('touchstart', (e) => { toque0 = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null; }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (!cfg.dobleToque || !toque0 || bloqueado()) return;
+    const c = e.changedTouches[0];
+    if (Math.hypot(c.clientX - toque0.x, c.clientY - toque0.y) > 12) { tap.t = 0; return; } // era un desplazamiento
+    if (e.target.closest && e.target.closest(NO_TAP)) { tap.t = 0; return; }
+    const now = Date.now();
+    if (now - tap.t < 350 && Math.hypot(c.clientX - tap.x, c.clientY - tap.y) < 40) { tap.t = 0; ultimoToggle = now; window.toggleOculto(); }
+    else tap = { t: now, x: c.clientX, y: c.clientY };
+  }, { passive: true });
+  document.addEventListener('dblclick', (e) => {
+    if (!cfg.dobleToque || bloqueado() || Date.now() - ultimoToggle < 700) return;
+    if (e.target.closest && e.target.closest(NO_TAP)) return;
+    window.toggleOculto();
+  });
+
   /* ---------- Código ---------- */
   const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
   const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
@@ -239,7 +259,8 @@
       <div class="field"><label for="segBloq">Bloquear al salir de la app</label><select id="segBloq" onchange="segSet('bloqueo', +this.value)" ${cfg.pinHash ? '' : 'disabled'}>
         ${[[0, 'Al momento'], [1, 'Tras 1 minuto'], [5, 'Tras 5 minutos'], [15, 'Tras 15 minutos']].map(([v, l]) => `<option value="${v}" ${Number(cfg.bloqueo) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
       <div class="segrow"><div><b>Ocultar importes al abrir</b><small>Se ven con el ojo de arriba o sacudiendo el móvil</small></div>${sw(cfg.ocultar, "segSet('ocultar', !(this.getAttribute('aria-checked')==='true'))", 'Ocultar importes al abrir')}</div>
-      <div class="segrow"><div><b>Sacudir para mostrar u ocultar</b><small>Tres sacudidas de lado a lado: izquierda, derecha, izquierda (o al revés)</small>${cfg.sacudir ? (motionOk ? '<small style="color:var(--good)">Sensor activo</small>' : '<button class="btn ghost" type="button" style="margin-top:6px" onclick="segSensor()">' + (permiso === 'denegado' ? 'Sin permiso: cierra y abre la app' : 'Activar el sensor') + '</button>') : ''}</div>${sw(cfg.sacudir, "segSet('sacudir', !(this.getAttribute('aria-checked')==='true'))", 'Sacudir para mostrar u ocultar')}</div>
+      <div class="segrow"><div><b>Doble toque para mostrar u ocultar</b><small>Toca dos veces seguidas en cualquier zona sin botones. No pide permisos.</small></div>${sw(cfg.dobleToque, "segSet('dobleToque', !(this.getAttribute('aria-checked')==='true'))", 'Doble toque para mostrar u ocultar')}</div>
+      <div class="segrow"><div><b>Sacudir para mostrar u ocultar</b><small>Tres sacudidas de lado a lado. El iPhone pide permiso al abrir la app.</small>${cfg.sacudir ? (motionOk ? '<small style="color:var(--good)">Sensor activo</small>' : '<button class="btn ghost" type="button" style="margin-top:6px" onclick="segSensor()">' + (permiso === 'denegado' ? 'Sin permiso: cierra y abre la app' : 'Activar el sensor') + '</button>') : ''}</div>${sw(cfg.sacudir, "segSet('sacudir', !(this.getAttribute('aria-checked')==='true'))", 'Sacudir para mostrar u ocultar')}</div>
       <div class="hint">El código y Face ID impiden que otra persona abra la app en tu móvil. Solo se guardan en este teléfono: no van en las copias de seguridad.</div>
     </section>`;
   };
@@ -269,7 +290,7 @@
 
   /* ---------- Arranque ---------- */
   (async () => {
-    try { const d = await window.LOCAL_DB.getDoc(DOC); if (d) cfg = { ...DEF, ...d }; } catch (e) {}
+    try { const d = await window.LOCAL_DB.getDoc(DOC); if (d) { cfg = { ...DEF, ...d }; if (!d.v) { cfg.v = 2; cfg.sacudir = false; cfg.dobleToque = true; await window.LOCAL_DB.setDoc(DOC, cfg); } } } catch (e) {}
     ready = true;
     ls.set('gd-lock', cfg.pinHash ? '1' : null);
     if (cfg.ocultar === false && ls.get('gd-ocultar') !== '0') { ls.set('gd-ocultar', '0'); }
