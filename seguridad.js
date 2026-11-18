@@ -94,13 +94,22 @@
   eye.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOculto(!S.oculto); } });
 
   /* ---------- Sacudir para mostrar u ocultar ---------- */
-  let motionOk = false, picos = [], espera = 0;
+  // Tres sacudidas de lado a lado alternando sentido: izquierda-derecha-izquierda o derecha-izquierda-derecha
+  let motionOk = false, golpes = [], espera = 0, gx = 0;
   function onMotion(e) {
-    const a = e.accelerationIncludingGravity || e.acceleration; if (!a || !cfg.sacudir) return;
-    const g = Math.sqrt((a.x || 0) ** 2 + (a.y || 0) ** 2 + (a.z || 0) ** 2);
+    if (!cfg.sacudir) return;
+    let ax, ay = 0, az = 0;
+    const a = e.acceleration;
+    if (a && a.x != null) { ax = a.x; ay = a.y || 0; az = a.z || 0; }
+    else { const g = e.accelerationIncludingGravity; if (!g || g.x == null) return; gx = gx * 0.9 + g.x * 0.1; ax = g.x - gx; }
     const now = Date.now(); if (now < espera) return;
-    if (Math.abs(g - 9.81) > 14) { picos = picos.filter((t) => now - t < 900); picos.push(now); }
-    if (picos.length >= 3) { picos = []; espera = now + 1500; if (!document.getElementById('lock')) window.toggleOculto(); }
+    if (Math.abs(ax) < 9 || Math.abs(ax) < 1.2 * Math.max(Math.abs(ay), Math.abs(az))) return;
+    const dir = ax > 0 ? 1 : -1;
+    golpes = golpes.filter((x) => now - x.t < 1400);
+    const ult = golpes[golpes.length - 1];
+    if (ult && ult.dir === dir) { ult.t = now; return; } // sigue siendo el mismo golpe
+    golpes.push({ dir, t: now });
+    if (golpes.length >= 3) { golpes = []; espera = now + 1500; if (!document.getElementById('lock')) window.toggleOculto(); }
   }
   function activarMovimiento() { if (motionOk) return; motionOk = true; window.addEventListener('devicemotion', onMotion); }
   function pedirMovimiento() {
@@ -220,7 +229,7 @@
       <div class="field"><label for="segBloq">Bloquear al salir de la app</label><select id="segBloq" onchange="segSet('bloqueo', +this.value)" ${cfg.pinHash ? '' : 'disabled'}>
         ${[[0, 'Al momento'], [1, 'Tras 1 minuto'], [5, 'Tras 5 minutos'], [15, 'Tras 15 minutos']].map(([v, l]) => `<option value="${v}" ${Number(cfg.bloqueo) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
       <div class="segrow"><div><b>Ocultar importes al abrir</b><small>Se ven con el ojo de arriba o sacudiendo el móvil</small></div>${sw(cfg.ocultar, "segSet('ocultar', !(this.getAttribute('aria-checked')==='true'))", 'Ocultar importes al abrir')}</div>
-      <div class="segrow"><div><b>Sacudir para mostrar u ocultar</b><small>Agita el móvil con fuerza dos o tres veces</small></div>${sw(cfg.sacudir, "segSet('sacudir', !(this.getAttribute('aria-checked')==='true'))", 'Sacudir para mostrar u ocultar')}</div>
+      <div class="segrow"><div><b>Sacudir para mostrar u ocultar</b><small>Tres sacudidas de lado a lado: izquierda, derecha, izquierda (o al revés)</small></div>${sw(cfg.sacudir, "segSet('sacudir', !(this.getAttribute('aria-checked')==='true'))", 'Sacudir para mostrar u ocultar')}</div>
       <div class="hint">El código y Face ID impiden que otra persona abra la app en tu móvil. Solo se guardan en este teléfono: no van en las copias de seguridad.</div>
     </section>`;
   };
