@@ -3,6 +3,16 @@
 (function () {
   'use strict';
 
+  /* ---------- Sin zoom: ni pellizcar ni doble toque ---------- */
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach((ev) => document.addEventListener(ev, (e) => e.preventDefault(), { passive: false }));
+  document.addEventListener('touchmove', (e) => { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  let ultimoToque = 0;
+  document.addEventListener('touchend', (e) => {
+    const t = Date.now();
+    if (t - ultimoToque < 300 && !(e.target.closest && e.target.closest('input,select,textarea'))) e.preventDefault();
+    ultimoToque = t;
+  }, { passive: false });
+
   /* ---------- Copia de seguridad ---------- */
   const hoy = () => new Date().toISOString().slice(0, 10);
   window.backupExport = async function () {
