@@ -15,6 +15,7 @@
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <style>html.locked header.top,html.locked main,html.locked nav.tabs{visibility:hidden}</style>
 <script>try{if(localStorage.getItem('gd-lock')==='1')document.documentElement.classList.add('locked')}catch(e){}</script>
+<script src="compat.js"></script>
 <script src="local-db.js"></script>
 <script src="mini-xlsx.js"></script>
 <title>Gestión del Dinero</title>
@@ -317,7 +318,7 @@ main.wrap{padding-bottom:calc(112px + env(safe-area-inset-bottom,0px));gap:14px}
   <button class="tab" data-v="ajustes" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Ajustes</button>
 </div></nav>
 
-<input type="file" id="fileIn" accept=".xlsx,.xls,.csv" hidden>
+<input type="file" id="fileIn" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,text/comma-separated-values" hidden>
 <div id="sheetHost"></div>
 <div class="toast" id="toast" hidden></div>
 
