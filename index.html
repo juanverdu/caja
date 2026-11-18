@@ -13,6 +13,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
+<style>html.locked header.top,html.locked main,html.locked nav.tabs{visibility:hidden}</style>
+<script>try{if(localStorage.getItem('gd-lock')==='1')document.documentElement.classList.add('locked')}catch(e){}</script>
 <script src="local-db.js"></script>
 <script src="mini-xlsx.js"></script>
 <title>Gestión del Dinero</title>
@@ -192,8 +194,10 @@ h2.sec{font-weight:800}
 .btn{font-weight:700}
 .btn.ghost{border-color:var(--line)}
 header.top .wrap{align-items:center;padding-block:16px 10px}
-.brand{display:flex;align-items:center;gap:12px;font-size:19px;font-weight:800;letter-spacing:-.01em}
-.brand .logo{width:40px;height:40px;border-radius:12px;background:var(--accent);display:grid;place-items:center;flex:none}
+.brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;letter-spacing:-.01em;min-width:0}
+.brand > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+header.top .wrap{gap:8px}
+.brand .logo{width:36px;height:36px;border-radius:12px;background:var(--accent);display:grid;place-items:center;flex:none}
 .brand small{display:block;font-weight:500;font-size:12px;color:var(--muted);letter-spacing:0}
 .iconbtn{width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--accent-tx);display:grid;place-items:center;cursor:pointer;padding:0}
 .iconbtn svg{width:20px;height:20px}
@@ -1546,6 +1550,7 @@ function vAjustes(el){
   <section class="card"><div class="ink2 small">${todosMovs().length} movimientos guardados, de ${fmtMes(mesesConDatos()[0])} a ${fmtMes(mesesConDatos().slice(-1)[0])}. Al importar un extracto nuevo, los repetidos se ignoran.</div>
     <div class="ink2 small">${trRows().length ? trRows().length + ' operaciones de Trade Republic, hasta ' + fshort(parseD(S.trmovs.hasta)) + '. ' : ''}Para Trade Republic importa el CSV de transacciones: se usa para la renta y para saber cuánto has aportado.</div>
     <button class="btn" type="button" onclick="pickFile()">Importar extracto o CSV</button></section>
+  ${window.segHTML ? segHTML() : ''}
   <h2 class="sec" id="aj-copia">Copia de seguridad</h2>
   <section class="card"><div class="ink2 small">Tus datos se guardan solo en este teléfono. Guarda una copia de vez en cuando en Archivos o iCloud Drive.${S.cfg.ultimaCopia ? ' Última copia: ' + fshort(parseD(S.cfg.ultimaCopia)) + '.' : ''}</div>
     <div class="row" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn primary" type="button" onclick="backupExport()">Guardar copia</button><button class="btn" type="button" onclick="backupPick()">Restaurar copia</button></div></section>
@@ -1694,5 +1699,6 @@ function safeRender(){
 </script>
 
 <script src="pwa.js"></script>
+<script src="seguridad.js"></script>
 </body>
 </html>

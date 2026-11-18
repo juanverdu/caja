@@ -59,6 +59,7 @@
     datos: 'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3',
     copia: 'M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19 10a4 4 0 0 1-1 8H7z',
     titular: 'M12 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8M4 20a8 8 0 0 1 16 0',
+    seguridad: 'M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3M12 15v2',
   };
   function infoSec(t) {
     const c = S.cfg || {}; const n = c.nomina || {}; const T = t.toLowerCase();
@@ -73,6 +74,7 @@
       if (T.startsWith('límites')) return ['limites', cnt(c.limites, 'límite', 'límites')];
       if (T.startsWith('reglas')) return ['reglas', cnt(c.reglas, 'regla', 'reglas')];
       if (T.startsWith('datos')) return ['datos', todosMovs().length + ' movimientos · importar extractos'];
+      if (T.startsWith('seguridad')) return ['seguridad', (window.segResumen && segResumen()) || 'Código, Face ID e importes ocultos'];
       if (T.startsWith('copia')) return ['copia', c.ultimaCopia ? 'Última: ' + fshort(parseD(c.ultimaCopia)) : 'Aún no has guardado ninguna'];
       if (T.startsWith('tus datos')) return ['titular', 'Para reconocer tus traspasos y la nómina'];
     } catch (e) {}

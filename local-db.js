@@ -98,22 +98,27 @@
 
   /* Copia de seguridad: todo en un único JSON */
   window.LOCAL_DB = {
+    // Lo que empieza por «local/» (código, Face ID…) es solo de este teléfono: ni se copia ni se sobrescribe
     async dump() {
       await loadAll();
-      const docs = {}; for (const [k, v] of cache) docs[k] = clone(v);
+      const docs = {}; for (const [k, v] of cache) if (!k.startsWith('local/')) docs[k] = clone(v);
       return { app: 'gestion-del-dinero', version: 1, creado: new Date().toISOString(), docs };
     },
     async restore(backup, { replace = true } = {}) {
       const docs = backup && backup.docs;
       if (!docs || typeof docs !== 'object') throw new Error('formato');
       await loadAll();
+      const borrar = replace ? [...cache.keys()].filter((k) => !k.startsWith('local/')) : [];
+      const nuevos = Object.entries(docs).filter(([k]) => !k.startsWith('local/'));
       await tx('readwrite', (st) => {
-        if (replace) st.clear();
-        for (const [k, v] of Object.entries(docs)) st.put(clone(v), k);
+        borrar.forEach((k) => st.delete(k));
+        for (const [k, v] of nuevos) st.put(clone(v), k);
       });
-      if (replace) cache.clear();
-      for (const [k, v] of Object.entries(docs)) cache.set(k, clone(v));
+      borrar.forEach((k) => cache.delete(k));
+      for (const [k, v] of nuevos) cache.set(k, clone(v));
     },
+    async getDoc(path) { await loadAll(); return clone(cache.get(path)); },
+    setDoc: (path, data) => setDoc(path, data),
     async count() { await loadAll(); return cache.size; },
   };
 
