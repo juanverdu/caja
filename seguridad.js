@@ -34,6 +34,8 @@
   #lock .pad button.alt{background:none;font-size:14px;color:var(--accent-tx)}
   #lock .pad button.alt svg{width:30px;height:30px}
   #lock .pad button:disabled{visibility:hidden}
+  #lock .pad button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+  #lock .pad button:active{background:var(--accent);color:#fff}
   #lock .cancel{border:0;background:none;color:var(--muted);font:600 14px var(--f-body);min-height:44px;cursor:pointer}
   .tgl{width:52px;height:32px;border-radius:999px;border:0;background:var(--sunk);position:relative;cursor:pointer;flex:none}
   .tgl::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:left .15s}
@@ -53,6 +55,7 @@
   /* ---------- Importes ocultos ---------- */
   S.oculto = ls.get('gd-ocultar') !== '0';
   const moneyOrig = window.money;
+  window.moneyReal = moneyOrig;
   window.money = function (n, opt) {
     const r = moneyOrig(n, opt);
     return S.oculto && r !== '—' ? r.replace(/\d[\d.,]*/, '•••') : r;
@@ -171,16 +174,22 @@
     const dots = el.querySelector('.dots');
     const pinta = () => dots.querySelectorAll('i').forEach((d, i) => d.classList.toggle('on', i < pin.length));
     el.setMsg = (t, err) => { el.querySelector('.msg').textContent = t; if (err) { dots.classList.remove('err'); void dots.offsetWidth; dots.classList.add('err'); } };
-    el.reset = () => { pin = ''; pinta(); };
-    el.addEventListener('click', async (e) => {
-      const b = e.target.closest('button'); if (!b) return;
+    el.reset = () => { pin = ''; setTimeout(pinta, 120); };
+    // pointerdown responde al instante (sin esperar al «click» del navegador); el click queda para el teclado
+    // Face ID y Cancelar van por «click»: iOS solo deja abrir Face ID desde un toque completo
+    const porClick = (b) => b.dataset.a === 'face' || b.dataset.a === 'cancel';
+    let ultimoPd = 0;
+    el.addEventListener('pointerdown', (e) => { const b = e.target.closest('button'); if (!b || b.disabled || porClick(b)) return; e.preventDefault(); ultimoPd = Date.now(); pulsa(b); });
+    // el click solo cuenta para Face ID/Cancelar o si no ha habido toque (teclado físico)
+    el.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && (porClick(b) || Date.now() - ultimoPd > 1000)) pulsa(b); });
+    const pulsa = async (b) => {
       if (b.dataset.a === 'del') { pin = pin.slice(0, -1); pinta(); return; }
       if (b.dataset.a === 'face') { onFace && onFace(el); return; }
       if (b.dataset.a === 'cancel') { cerrarPantalla(); onCancel(); return; }
       if (b.dataset.n == null || pin.length >= len) return;
       pin += b.dataset.n; pinta();
-      if (pin.length === len) { const p = pin; setTimeout(() => onPin(p, el), 120); }
-    });
+      if (pin.length === len) { const p = pin; pin = ''; onPin(p, el); }
+    };
     return el;
   }
   function cerrarPantalla() { const l = $id('lock'); if (l) l.remove(); document.documentElement.classList.remove('locked'); }

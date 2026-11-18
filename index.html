@@ -1402,10 +1402,10 @@ function trFIFO(){
     const q = Math.abs(Number(r.q) || 0); if (!q){ if (r.ty === 'BUY'){ pendQ[r.s] = (pendQ[r.s] || 0) - Number(r.a) - Number(r.fee || 0); nombres[r.s] = r.n; } continue; }
     if (r.ty === 'BUY'){ const lot = { q, c: -Number(r.a) - Number(r.fee || 0), d: r.d, id: r.id }; (lots[r.s] = lots[r.s] || []).push(lot); (compras[r.s] = compras[r.s] || []).push({ d: r.d, id: r.id }); }
     else if (r.ty === 'SELL'){
-      let left = q, cost = 0; const L = lots[r.s] || []; const usados = new Set();
-      while (left > 1e-9 && L.length){ const l = L[0]; const take = Math.min(left, l.q); const cc = l.c * take / l.q; cost += cc; l.c -= cc; l.q -= take; left -= take; usados.add(l.id); if (l.q <= 1e-9) L.shift(); }
+      let left = q, cost = 0; const L = lots[r.s] || []; const usados = new Set(); const fc = [];
+      while (left > 1e-9 && L.length){ const l = L[0]; const take = Math.min(left, l.q); const cc = l.c * take / l.q; cost += cc; l.c -= cc; l.q -= take; left -= take; usados.add(l.id); fc.push(l.d); if (l.q <= 1e-9) L.shift(); }
       const proceeds = Number(r.a) + Number(r.fee || 0);
-      ventas.push({ d: r.d, dt: r.dt, n: r.n, s: r.s, ac: r.ac, q, proceeds, cost, gain: proceeds - cost, usados, incompleto: left > 1e-6 });
+      ventas.push({ d: r.d, dt: r.dt, n: r.n, s: r.s, ac: r.ac, q, proceeds, cost, gain: proceeds - cost, usados, fc, incompleto: left > 1e-6 });
     }
   }
   const t = today();
@@ -1441,6 +1441,7 @@ function rentaCard(Y){
     <div class="row"><span class="ink2">Dividendos (bruto · retenido)</span><span class="num">${money(sum(div,'a'))} · ${money(sum(div,'tax'))}</span></div>
     <div class="row"><span class="ink2">Intereses (bruto · retenido)</span><span class="num">${money(sum(int,'a'))} · ${money(sum(int,'tax'))}</span></div>
     ${pos.length ? `<div class="eyebrow" style="margin-top:6px">Posiciones actuales</div><div class="tbl-wrap"><table><thead><tr><th>Valor</th><th>Unidades</th><th>Coste</th></tr></thead><tbody>${pos.map(p => `<tr><td>${esc(p.n)}</td><td class="n">${p.q.toLocaleString('es-ES',{maximumFractionDigits:4})}${p.sinQ ? ' + ?' : ''}</td><td class="n">${money(p.cost)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    <button class="btn primary" type="button" onclick="informeRenta(${Y})">Informe para la renta · PDF</button>
     <div class="hint">Cálculo orientativo por el método FIFO, que es el que usa Hacienda, con comisiones incluidas. *Una pérdida no cuenta si compraste el mismo valor dos meses antes o después de vender: se aplaza hasta que vendas esas acciones. Para la declaración, compara con el informe fiscal anual de Trade Republic y, si tienes dudas, con un asesor.</div></section>`;
 }
 
@@ -1702,5 +1703,6 @@ function safeRender(){
 
 <script src="pwa.js"></script>
 <script src="seguridad.js"></script>
+<script src="renta.js"></script>
 </body>
 </html>

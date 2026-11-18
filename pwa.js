@@ -9,7 +9,7 @@
   let ultimoToque = 0;
   document.addEventListener('touchend', (e) => {
     const t = Date.now();
-    if (t - ultimoToque < 300 && !(e.target.closest && e.target.closest('input,select,textarea'))) e.preventDefault();
+    if (t - ultimoToque < 300 && !(e.target.closest && e.target.closest('input,select,textarea,button,a,label,[role="switch"]'))) e.preventDefault();
     ultimoToque = t;
   }, { passive: false });
 
